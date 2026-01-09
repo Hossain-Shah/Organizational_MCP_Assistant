@@ -11,3 +11,12 @@ env_name\Scripts\activate.bat
 ```bash
 pip install -r requirements.txt
 ```
+
+## Dependency:
+- tensorflow
+- transformers
+- spacy
+- langgraph
+- mcp
+- torch
+- nltk
