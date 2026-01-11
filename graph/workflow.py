@@ -22,4 +22,7 @@ graph.add_conditional_edges(
         else "general"
 )
 
+graph.add_edge("task", END)
+graph.add_edge("general", END)
+
 app = graph.compile()
