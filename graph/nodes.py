@@ -39,7 +39,7 @@ GENERAL_LLM_SERVER = StdioServerParameters(
     command="python",
     args=["mcp_servers/general_llm_server.py"]
 )
-
+CONF_THRESHOLD = 0.8
 
 async def intent_node(state):
     text = state.get("user_input", "") or ""
@@ -63,11 +63,12 @@ async def intent_node(state):
     if t["intent"] != "Irrelevant":
         scores[t["intent"]] = t["confidence"]
 
+    state["task_intents"] = scores
+
     # Pick best intent
     if not scores:
         state["intent"] = "GENERAL"
         state["confidence"] = 0.0
-        state["response"] = None
         return state
 
     # Pick best intent
@@ -75,10 +76,9 @@ async def intent_node(state):
     best_score = scores[best_intent]
     
     # Global rejection threshold
-    if best_score < 0.8:
+    if best_score < CONF_THRESHOLD:
         state["intent"] = "GENERAL"
         state["confidence"] = best_score
-        state["response"] = None
         return state
 
     state["intent"] = best_intent
@@ -92,16 +92,11 @@ def greeting_node(state):
     state["response"] = state.get("model_response")
     return state
 
-def fallback_node(state):
-    state["response"] = "I'm not sure I understood that. Could you please rephrase?"
-    return state
-
 async def task_node(state):
     intent = state["intent"]
     text = state["user_input"]
 
     if intent not in {"Room Booking System", "HR", "VMS"}:
-        state["response"] = "How can I help you?"
         return state
 
     # extract entities
@@ -111,24 +106,7 @@ async def task_node(state):
             entities = await call_tool_json(session, "extract_entities", {"text": text})
 
     state["entities"] = entities
-
-    # generate response
-    async with stdio_client(RESP_SERVER) as (r, w):
-        async with ClientSession(r, w) as session:
-            await session.initialize()
-            res = await call_tool_json(
-                session,
-                "generate_task_response",
-                {
-                    "intent": intent,
-                    "entities": entities
-                }
-            )
-
-    state["response"] = res["response"]
-
-    if not entities:
-        state["response"] = "Could you please provide more details?"
+    state["response"] = None
     return state
 
 async def general_llm_node(state):
@@ -143,5 +121,5 @@ async def general_llm_node(state):
                 {"text": text}
             )
 
-    state["response"] = res.get("response", "Sorry, I didn't understand that.")
+    state["response"] = res.get("response")
     return state
