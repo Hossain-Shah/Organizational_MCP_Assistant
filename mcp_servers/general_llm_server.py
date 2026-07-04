@@ -11,13 +11,16 @@ model.eval()
 mcp = FastMCP("general_llm")
 
 @mcp.tool()
-def generate_answer(text: str) -> dict:
+def generate_answer(text: str, context: str = "") -> dict:
     """
     Open-domain response for out-of-scope queries
     """
 
     prompt = f"""
     You are an organizational assistant for internal and general queries.
+
+    Context:
+    {context}
 
     If the question is general knowledge, answer factually.
     If the question is about your role, explain your capabilities clearly.
