@@ -39,11 +39,33 @@ GENERAL_LLM_SERVER = StdioServerParameters(
     command="python",
     args=["mcp_servers/general_llm_server.py"]
 )
+
+GENERIC_CLUSTER_SERVER = StdioServerParameters(
+    command="python",
+    args=["mcp_servers/generic_cluster_server.py"]
+)
+
 CONF_THRESHOLD = 0.8
 
 async def intent_node(state):
     text = state.get("user_input", "") or ""
     scores = {}
+
+    GENERIC_CLUSTER_KEYWORDS = {
+        "generic cluster",
+        "cluster prediction",
+        "trend prediction",
+        "attendance trend",
+        "predict trend",
+        "student trend"
+    }
+
+
+    if any(k in text.lower() for k in GENERIC_CLUSTER_KEYWORDS):
+        state["intent"] = "GENERIC_CLUSTER"
+        state["confidence"] = 1.0
+        return state
+    
     # Greeting
     async with stdio_client(GREET_SERVER) as (r, w):
         async with ClientSession(r, w) as session:
@@ -122,4 +144,20 @@ async def general_llm_node(state):
             )
 
     state["response"] = res.get("response")
+    return state
+
+async def generic_cluster_node(state):
+    records = state.get("generic_cluster_records", [])
+
+    async with stdio_client(GENERIC_CLUSTER_SERVER) as (r, w):
+        async with ClientSession(r, w) as session:
+            await session.initialize()
+
+            res = await call_tool_json(
+                session,
+                "predict_generic_cluster",
+                {"records": records}
+            )
+
+    state["response"] = res
     return state
