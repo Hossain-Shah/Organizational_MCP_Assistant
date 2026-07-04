@@ -1,0 +1,13 @@
+tensorboard==2.17.1
+tensorboard-data-server==0.7.2
+tensorflow==2.17.0
+transformers==4.44.2
+spacy==3.7.6
+spacy-alignments==0.9.1
+spacy-legacy==3.0.12
+spacy-loggers==1.0.5
+langgraph
+mcp
+numpy==1.26.4
+torch==2.5.1
+nltk
